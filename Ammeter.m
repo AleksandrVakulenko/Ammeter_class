@@ -1,4 +1,4 @@
-
+% (DONE)
 % Update code in box CPU
 % if (Analog_data_1 == 0x8000){
 %   Analog_data_1 = 0x8001;
@@ -6,39 +6,43 @@
 % if (Analog_data_2 == 0x8000){
 %   Analog_data_2 = 0x8001;
 % }
-%
-
-% Add README.md
 
 % TODO:
-%  1) Transform values
-%  2) Add all CMDs
-%  3) ADD double to binary converter
-%  4) add function to send cmd: function(CMD_n, arg_high, arg_low)
-%  5) Data2File export
-%  6) add flush buffer on sending(false)
-%  7) after TODO(6) -> remove read 'force'
-%  8) chech default Period and Waveform in Flags.Analog
-%  9) update all warning('CMD ignored')
-% 10) DO set_voltage with gain and limits check
-% 11) create output voltage limits
-% 12) get_name UNUSED
-% 13) Find real values of RC
-% 14) Create FIXME parser
-% 15) Create a new waveform
+%  1) Transform values with real [units]
+%  2) check default Period and Waveform in Flags.Analog
+%  3) add function send cmd: function(CMD_n, arg_high, arg_low) 
+%  4) USE gain setting
+%  5) create output voltage limits
+%  6) DO set_voltage with gain and limits check
+%  7) update all warning('CMD ignored')
+%  8) 
+%  9) remove read 'force' (MAYBE NOT)
+% 10) ADD double to binary converter (MAYBE NOT)
+% 11) 
+% 12) Find real values of R&C
+% 13) Create a new waveforms
+% 14) 
+
+% TODO user library:
+%  1) Create library for user
+%  2) Data2File export
+%  3) Add README.md
+%  4) 
+%  5) 
+%  6) 
 
 %CMD:
 %  1) get handle pos      - DONE
 %  2) ---
 %  3) set zero relay      - DONE
 %  4) set sending flag    - DONE
-%  5) Set amp and period  - ----UNDONE
+%  5) Set amp and period  - DONE
 %  6) Start measuring     - DONE
-%  7) Set Output_flag     - ----UNDONE
+%  7) Set Output_flag     - xxxx output flag volatile behavior
 %  8) Set DAC value       - DONE
 %  9) RESET               - DONE
 % 10) set V_ch relay      - DONE
-% 11) set_wave_form_gen   - ----UNDONE
+% 11) set_wave_form_gen   - DONE
 
 % To find all FIXME, TODO, NOTE use:
 % dofixrpt('Ammeter.m','file') -> find notes in file
@@ -144,10 +148,26 @@ classdef Ammeter < handle
                 flag = logical(flag);
                 obj.send_cmd(uint8([4 0 flag 0 0]));
                 obj.Flags.sending = flag;
+                if ~flag
+                    serial_flush(obj.Serial_obj);
+                end
             else
                 warning(['CMD(sending == ' num2str(flag) ') ignored'])
             end
         end
+       
+%         function output_flag(obj, flag)
+%             if obj.Flags.connected
+%                 if ~obj.Flags.sending
+%                    get_handle_position(obj); 
+%                 end
+%                 flag = logical(flag);
+%                 obj.send_cmd(uint8([7 0 flag 0 0]));
+%                 obj.Flags.output = flag; %VOLATILE!!!!
+%             else
+%                 warning(['CMD(output_flag == ' num2str(flag) ') ignored'])
+%             end
+%         end
         
         function relay_chV(obj, flag)
             if obj.Flags.connected
@@ -175,7 +195,7 @@ classdef Ammeter < handle
                 obj.Analog.voltage_out = voltage;
                 obj.send_cmd(uint8([8 byte_high byte_low 0 0]));
             else
-                warning('CMD ignored')
+                warning('CMD ignored');
             end
         end
         
@@ -189,6 +209,24 @@ classdef Ammeter < handle
         end
         
         function set_amp_and_period(obj, amp, period)
+            if obj.Flags.connected
+                [v_byte_high, v_byte_low, voltage] = voltage2bitcode(amp); %V
+                [p_byte_high, p_byte_low, period] = period2bitcode(period); %s
+                obj.send_cmd(uint8([5 v_byte_high v_byte_low p_byte_high p_byte_low]));
+                obj.Analog.Amplitude = voltage;
+                obj.Analog.Period = period;
+            else
+                warning('CMD ignored')
+            end
+        end
+        
+        function set_wave_form_gen(obj, wave_form)
+            if obj.Flags.connected && ~~sum(wave_form == [0, 1, 2])
+                obj.send_cmd(uint8([11 0 wave_form 0 0]));
+                obj.Analog.Waveform = wave_form;
+            else
+                warning('CMD ignored')
+            end
         end
         
         function [R, C] = get_handle_position(obj)
@@ -245,7 +283,7 @@ classdef Ammeter < handle
             end
         end
         
-        function name = get_name(obj)
+        function name = get_name(obj) %FIXME unused
             name = obj.name;
         end
         %--------------------------Getters_END------------------------------
@@ -259,19 +297,18 @@ classdef Ammeter < handle
         pause_after_reset = 0.5;
         
         Flags = struct('sending', false, ...
-            'connected', false, ...
-            'relay_chV', false, ...
-            'relay_zerocap', false);
+                       'connected', false, ...
+                       'relay_chV', false, ...
+                       'relay_zerocap', false);
         
-        Analog = struct('bias', ...
-            struct('ch1', -0.0021, 'ch2', -3.8772e-04), ...
-            'voltage_out', 0, ...
-            'Amplitude', 0, ...
-            'Period', 1, ...
-            'Waveform', 1,...
-            'gain', 1, ...
-            'res', -1, ...
-            'cap', -1);
+        Analog = struct('bias', struct('ch1', -0.0021, 'ch2', -3.8772e-04), ...
+                        'voltage_out', 0, ...
+                        'Amplitude', 0, ...
+                        'Period', 2, ...
+                        'Waveform', 0,...
+                        'gain', 1, ...
+                        'res', -1, ...
+                        'cap', -1);
         
     end
     
@@ -285,7 +322,7 @@ classdef Ammeter < handle
         
         function send_cmd(obj, CMD)
             write(obj.Serial_obj, uint8(CMD), "uint8");
-            pause(0.01);
+            pause(0.012);
         end
         
         function RESET(obj) %RESET CMD
@@ -300,7 +337,7 @@ function [R, C] = get_rc(Data)
 Data = Data(4);
 Cind = bitand(Data, 0b1111) + 1;
 Rind = bitshift(Data, -4) + 1;
-R_array = [2e-9, 200e-9, 20e-6, 2e-3, 25e-3, -1]; %Ohm
+R_array = [5e9 ,50e6, 510e3, 5.5e3, 400, -1]; %Ohm
 C_array = [-1, 10e-12, 100e-12, 1e-9, 100e-9, 10e-6]; %F
 R = R_array(Rind);
 C = C_array(Cind);
@@ -455,21 +492,25 @@ byte_high = uint8(bi2de(flip(bit_set_high)));
 
 end
 
-%FIXME: delete old code below
-% function [byte_high, byte_low] = voltage2bitcode(voltage)
-% if voltage < -10
-%     voltage = -10;
-% end
-% if voltage > 10
-%     voltage = 10;
-% end
-%
-% bitcode = int16(32767*voltage/(10*32767/32768));
-%
-% byte_low = int8(bitand(bitcode, int16(0b11111111)));
-% byte_high = int8(bitshift(bitcode, -8));
-% byte_high = typecast(int8(byte_high), 'uint8');
-%
-% end
+function [byte_high, byte_low, period] = period2bitcode(period) %s
+high_limit = 60;
+low_limit = 0.1;
+if period > high_limit
+    period = high_limit;
+end
+if period < low_limit
+    period = low_limit;
+end
+
+Sample_period = 1; % ms
+Tick_count = period*1000/Sample_period;
+
+bit_set_low = bitget(Tick_count, 8:-1:1);
+byte_low = uint8(bi2de(flip(bit_set_low)));
+bit_set_high = bitget(Tick_count, 16:-1:9);
+byte_high = uint8(bi2de(flip(bit_set_high)));
+end
+
+
 
 
