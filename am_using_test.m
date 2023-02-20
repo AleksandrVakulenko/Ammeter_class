@@ -5,12 +5,22 @@ warning on all
 warning on backtrace
 warning off verbose
 
+%%
+
+obj = Ammeter("COM3", [], 'bias');
+% obj = Ammeter("COM3", []);
+obj.set_gain(1);
+
+
+obj.connect();
+relay_chV(obj, true);
+
 
 %%
 
 clc
 
-obj = Ammeter("COM3", 'nyan');
+obj = Ammeter("COM4", 'nyan');
 obj.connect();
 
 Volt_list = [-9.7:-0.1:-10 0];
@@ -21,10 +31,15 @@ obj.voltage_set(1);
 
 obj.sending(true);
 pause(0.5);
-[part_ch_1, part_ch_2, isOk] = obj.read_data("force");
+% [ch_1, ch_2, isOk] = obj.read_data("force");
+[ch1, ch2, mode, res_cap, isOk] = read_data_units(obj);
+mean(ch1)
+mean(ch2)
+mode
+res_cap
+isOk
 obj.sending(false);
-[part_ch_1, part_ch_2, isOk] = obj.read_data("force");
-part_ch_1
+
 
 
 
@@ -48,12 +63,11 @@ obj.voltage_set(Volt_list(i));
 
 obj.sending(true);
 pause(0.5);
-obj.sending(false);
-pause(0.1);
 [part_ch_1, part_ch_2, isOk] = obj.read_data("force");
+obj.sending(false);
 Volt_out(i) = mean(part_ch_1);
 
-disp(['       ' num2str(Volt_list(i)), ' : ', num2str(Volt_out(i))]);
+disp([num2str(Volt_list(i), '%+08.4f'), ' : ', num2str(Volt_out(i), '%+08.4f')]);
 end
 
 obj.disconnect();
@@ -255,7 +269,6 @@ obj.relay_chV(true);
 obj.sending(true);
 [ch_V, ~] =  Ammeter_get_data_frame(obj, 100);
 obj.sending(false);
-[~, ~, ~] = obj.read_data('force');
 Value = mean(ch_V);
 
 disp(num2str(Value, '%+08.4f'))
@@ -304,7 +317,7 @@ pause(0.05)
 obj.sending(true);
 [ch_V, ~] =  Ammeter_get_data_frame(obj, 80);
 obj.sending(false);
-[~, ~, ~] = obj.read_data('force');
+%[~, ~, ~] = obj.read_data('force');
 
 Volt_out(i) = mean(ch_V);
 end

@@ -8,28 +8,26 @@
 % }
 
 % TODO:
-%  1) Transform values with real [units]
-%  2) check default Period and Waveform in Flags.Analog
+%  1) remove read 'force'
+%  2) update all warning('CMD ignored')
 %  3) add function send cmd: function(CMD_n, arg_high, arg_low) 
-%  4) USE gain setting
-%  5) create output voltage limits
-%  6) DO set_voltage with gain and limits check
-%  7) update all warning('CMD ignored')
-%  8) 
-%  9) remove read 'force' (MAYBE NOT)
-% 10) ADD double to binary converter (MAYBE NOT)
+%  4) USE input divider (invert gain)
+%  5) USE gain setting
+%  6) create output voltage limits
+%  7) DO set_voltage with gain and limits check
+%  8) ADD double to binary converter (MAYBE NOT)
+%  9) 
+% 10) 
 % 11) 
-% 12) Find real values of R&C
-% 13) Create a new waveforms
-% 14) 
 
 % TODO user library:
 %  1) Create library for user
 %  2) Data2File export
 %  3) Add README.md
-%  4) 
-%  5) 
+%  4) Find real values of R&C
+%  5) Create a new waveforms
 %  6) 
+%  7)
 
 %CMD:
 %  1) get handle pos      - DONE
@@ -91,6 +89,7 @@ classdef Ammeter < handle
         end
         
         function disconnect(obj)
+            %FIXME: see flags
             if obj.Flags.connected
                 obj.relay_zerocap(false);
                 obj.voltage_set(0);
@@ -131,6 +130,37 @@ classdef Ammeter < handle
                     end
                 end
             end
+        end
+        
+        function [ch1, ch2, mode, res_cap, isOk] = read_data_units(obj, varargin)
+            if nargin == 2 
+                Force = varargin{1};
+            else
+                Force = "";
+            end
+            
+            [V_ch1, V_ch2, isOk] = read_data(obj, Force);
+            res_cap = struct('res', obj.Analog.res, 'cap', obj.Analog.cap);
+            invert_gain = obj.Analog.invert_gain;
+            % FIXME: use invert gain
+            ch1 = V_ch1*invert_gain;
+            if obj.Analog.res == -1 && obj.Analog.cap == -1
+                mode = "off";
+                ch2 = V_ch2;
+            end
+            if obj.Analog.res ~= -1 && obj.Analog.cap ~= -1
+                mode = "mix";
+                ch2 = V_ch2;
+            end
+            if obj.Analog.res == -1 && obj.Analog.cap ~= -1
+                mode = "cap";
+                ch2 = V_ch2*obj.Analog.cap;
+            end
+            if obj.Analog.res ~= -1 && obj.Analog.cap == -1
+                mode = "res";
+                ch2 = V_ch2/obj.Analog.res;
+            end
+            
         end
         
         function bias_correction(obj)
@@ -307,6 +337,7 @@ classdef Ammeter < handle
                         'Period', 2, ...
                         'Waveform', 0,...
                         'gain', 1, ...
+                        'invert_gain', 1, ...
                         'res', -1, ...
                         'cap', -1);
         
