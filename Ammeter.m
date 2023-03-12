@@ -8,22 +8,17 @@
 % }
 
 % TODO:
-%  1) remove read 'force'
-%  2) update all warning('CMD ignored')
-%  3) add function send cmd: function(CMD_n, arg_high, arg_low) 
-%  4) USE input divider (invert gain)
-%  5) USE gain setting
-%  6) create output voltage limits
-%  7) DO set_voltage with gain and limits check
-%  8) ADD double to binary converter (MAYBE NOT)
-%  9) 
-% 10) 
-% 11) 
+%  1) create output voltage limits FUNCTION
+%  2) add function send cmd: function(CMD_n, arg_high, arg_low) 
+%  3) ADD double to binary converter (MAYBE NOT)
+%  4) change isOk behavior to straight logic
+%  5) 
+
 
 % TODO user library:
 %  1) Create library for user
 %  2) Data2File export
-%  3) Add README.md
+%  3) Update README.md
 %  4) Find real values of R&C
 %  5) Create a new waveforms
 %  6) 
@@ -31,7 +26,7 @@
 
 %CMD:
 %  1) get handle pos      - DONE
-%  2) ---
+%  2) ---(NOP)            - xxxx
 %  3) set zero relay      - DONE
 %  4) set sending flag    - DONE
 %  5) Set amp and period  - DONE
@@ -89,7 +84,7 @@ classdef Ammeter < handle
         end
         
         function disconnect(obj)
-            %FIXME: see flags
+            %FIXME: see flags ???
             if obj.Flags.connected
                 obj.relay_zerocap(false);
                 obj.voltage_set(0);
@@ -103,19 +98,18 @@ classdef Ammeter < handle
             end
         end
         
-        function [V_ch1, V_ch2, isOk] = read_data(obj, varargin)
+        function [V_ch1, V_ch2, isOk] = read_data(obj)
             V_ch1 = [];
             V_ch2 = [];
             isOk = 0;
-            Force = nargin == 2 && varargin{1} == "force";
             if ~obj.Flags.connected
                 warning([obj.name ' disconnected'])
                 isOk = -1;
-            elseif ~obj.Flags.sending && ~Force
+            elseif ~obj.Flags.sending
                 warning([obj.name ' is not sending anything'])
                 isOk = -2;
             else
-                [Temp_data, timeout_flag] = get_bytes(obj.Serial_obj);
+                [Temp_data, timeout_flag] = obj.get_bytes();
                 if timeout_flag
                     warning('data recive timeout')
                     isOk = -3;
@@ -132,18 +126,11 @@ classdef Ammeter < handle
             end
         end
         
-        function [ch1, ch2, mode, res_cap, isOk] = read_data_units(obj, varargin)
-            if nargin == 2 
-                Force = varargin{1};
-            else
-                Force = "";
-            end
-            
-            [V_ch1, V_ch2, isOk] = read_data(obj, Force);
+        function [ch1, ch2, mode, res_cap, isOk] = read_data_units(obj)
+            [V_ch1, V_ch2, isOk] = read_data(obj);
             res_cap = struct('res', obj.Analog.res, 'cap', obj.Analog.cap);
-            invert_gain = obj.Analog.invert_gain;
-            % FIXME: use invert gain
-            ch1 = V_ch1*invert_gain;
+            gain = obj.Analog.gain;
+            ch1 = V_ch1*gain;
             if obj.Analog.res == -1 && obj.Analog.cap == -1
                 mode = "off";
                 ch2 = V_ch2;
@@ -182,7 +169,7 @@ classdef Ammeter < handle
                     serial_flush(obj.Serial_obj);
                 end
             else
-                warning(['CMD(sending == ' num2str(flag) ') ignored'])
+                warning(['CMDsending == ' num2str(flag) ' ignored'])
             end
         end
        
@@ -205,7 +192,7 @@ classdef Ammeter < handle
                 obj.Flags.relay_chV = flag;
                 obj.send_cmd(uint8([10 0 flag 0 0]));
             else
-                warning('CMD ignored')
+                warning(['CMD relay_chV == ' num2str(flag) ' ignored'])
             end
         end
         
@@ -215,17 +202,28 @@ classdef Ammeter < handle
                 obj.Flags.relay_zerocap = flag;
                 obj.send_cmd(uint8([3 0 flag 0 0]));
             else
-                warning('CMD ignored')
+                warning(['CMD relay_zerocap == ' num2str(flag) ' ignored'])
             end
         end
         
         function voltage_set(obj, voltage)
+            %FIXME: global V limit check here
+            gain = obj.Analog.gain;
+            voltage_out = voltage/gain;
+            if voltage_out > 10
+                warning(['Output voltage limited by 10 V from ' num2str(voltage_out) ' V'])
+                voltage_out = 10;
+            end
+            if voltage_out < -10
+                warning(['Output voltage limited by -10 V from ' num2str(voltage_out) ' V'])
+                voltage_out = -10;
+            end
             if obj.Flags.connected
-                [byte_high, byte_low, voltage] = voltage2bitcode(voltage);
-                obj.Analog.voltage_out = voltage;
+                [byte_high, byte_low, voltage_out] = voltage2bitcode(voltage_out);
+                obj.Analog.voltage_out = voltage_out;
                 obj.send_cmd(uint8([8 byte_high byte_low 0 0]));
             else
-                warning('CMD ignored');
+                warning(['CMD voltage_set == ' num2str(voltage) ' ignored']);
             end
         end
         
@@ -233,20 +231,33 @@ classdef Ammeter < handle
             if obj.Flags.connected
                 obj.send_cmd(uint8([6 0 0 0 0]));
                 obj.Flags.sending = true;
+                pause(1.3); %NOTE: same as in avr side
             else
-                warning('CMD ignored')
+                warning('CMD start_measuring ignored')
             end
         end
         
         function set_amp_and_period(obj, amp, period)
+            %FIXME: global V limit check here
+            gain = obj.Analog.gain;
+            amp_out = amp/gain;
+            if amp_out > 10
+                warning(['Output amplitude limited by 10 V from ' num2str(amp_out) ' V'])
+                amp_out = 10;
+            end
+            if amp_out < -10
+                warning(['Output amplitude limited by -10 V from ' num2str(amp_out) ' V'])
+                amp_out = -10;
+            end
             if obj.Flags.connected
-                [v_byte_high, v_byte_low, voltage] = voltage2bitcode(amp); %V
+                [v_byte_high, v_byte_low, voltage] = voltage2bitcode(amp_out); %V
                 [p_byte_high, p_byte_low, period] = period2bitcode(period); %s
                 obj.send_cmd(uint8([5 v_byte_high v_byte_low p_byte_high p_byte_low]));
                 obj.Analog.Amplitude = voltage;
                 obj.Analog.Period = period;
             else
-                warning('CMD ignored')
+                warning(['CMD set_amp_and_period ' num2str(amp) ...
+                         ', ' num2str(period) ' ignored'])
             end
         end
         
@@ -255,7 +266,7 @@ classdef Ammeter < handle
                 obj.send_cmd(uint8([11 0 wave_form 0 0]));
                 obj.Analog.Waveform = wave_form;
             else
-                warning('CMD ignored')
+                warning(['CMD set_wave_form_gen == ' num2str(wave_form) ' ignored'])
             end
         end
         
@@ -267,7 +278,7 @@ classdef Ammeter < handle
             elseif ~obj.Flags.sending
                 serial_flush(obj.Serial_obj);
                 obj.send_cmd(uint8([1 0 0 0 0]));
-                [Data, timeout_flag] = get_bytes(obj.Serial_obj);
+                [Data, timeout_flag] = obj.get_bytes();
                 if timeout_flag
                     warning('receive timeout (in get_handle_position)')
                 else
@@ -326,6 +337,8 @@ classdef Ammeter < handle
         Serial_obj = [];
         pause_after_reset = 0.5;
         
+        Wait_data_timeout = 1; %s
+        
         Flags = struct('sending', false, ...
                        'connected', false, ...
                        'relay_chV', false, ...
@@ -337,7 +350,6 @@ classdef Ammeter < handle
                         'Period', 2, ...
                         'Waveform', 0,...
                         'gain', 1, ...
-                        'invert_gain', 1, ...
                         'res', -1, ...
                         'cap', -1);
         
@@ -359,6 +371,31 @@ classdef Ammeter < handle
         function RESET(obj) %RESET CMD
             send_cmd(obj, uint8([9 0 0 0 0]));
             pause(obj.pause_after_reset);
+        end
+        
+        
+        function [Data, timeout_flag] = get_bytes(Obj)
+            serial_obj = Obj.Serial_obj;
+            Wait_timeout = Obj.Wait_data_timeout;
+            timeout_flag = 0;
+            stop = 0;
+            Time_start = tic;
+            while ~stop
+                Bytes_count = serial_obj.NumBytesAvailable;
+                Bytes_count = floor(Bytes_count/4)*4;
+                
+                if Bytes_count > 0
+                    Data = read(serial_obj, Bytes_count, "uint8");
+                    stop = 1;
+                end
+                
+                Time_now = toc(Time_start);
+                if Time_now > Wait_timeout
+                    stop = 1;
+                    timeout_flag = 1;
+                    Data = 0;
+                end
+            end
         end
     end
 end
@@ -401,34 +438,12 @@ if Bytes_count > 0
 end
 end
 
-function [Data, timeout_flag] = get_bytes(Obj)
-Wait_timeout = 1; %s FIXME: do it 'global' value of class
-timeout_flag = 0;
-stop = 0;
-Time_start = tic;
-while ~stop
-    Bytes_count = Obj.NumBytesAvailable;
-    Bytes_count = floor(Bytes_count/4)*4;
-    
-    if Bytes_count > 0
-        Data = read(Obj, Bytes_count, "uint8");
-        stop = 1;
-    end
-    
-    Time_now = toc(Time_start);
-    if Time_now > Wait_timeout
-        stop = 1;
-        timeout_flag = 1;
-        Data = 0;
-    end
-end
-end
-
 function [Value_X, Value_Y, CMD] = unpack_raw_bytes(Data_all)
 Bytes_01 = Data_all(1:4:end);
 Bytes_02 = Data_all(2:4:end);
 Bytes_03 = Data_all(3:4:end);
 Bytes_04 = Data_all(4:4:end);
+% disp([Bytes_03(1) Bytes_04(1)])%FIXME delete
 
 CMD_ind = find((Bytes_01 == 0x80) & (Bytes_02 == 0x00));
 if CMD_ind
@@ -470,14 +485,14 @@ end
 end
 
 function [ch1_mean, ch2_mean] = Ammeter_bias_measure(obj)
-Measuring_period = 1; %s FIXME: do it 'global' value of class
+Measuring_period = 1; %s
 Flags = obj.show_flags;
 
 if ~Flags.connected
     obj.connect('reset');
 else
     obj.disconnect();
-    pause(0.01); %FIXME: why pause?
+    pause(0.01);
     obj.connect('reset');
 end
 
