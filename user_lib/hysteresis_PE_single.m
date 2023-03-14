@@ -4,7 +4,7 @@ function [E, P] = hysteresis_PE_single(ammeter_obj, Loop_opts, fig)
 amp = Loop_opts.amp;
 period = Loop_opts.period;
 gain = Loop_opts.gain;
-divider = loop_opts.divider;
+divider = Loop_opts.divider;
 
 obj = ammeter_obj;
 Flags = obj.show_flags;

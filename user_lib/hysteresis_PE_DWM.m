@@ -4,7 +4,7 @@ function feloop = hysteresis_PE_DWM(ammeter_obj, Loop_opts, fig)
 amp = Loop_opts.amp;
 period = Loop_opts.period;
 gain = Loop_opts.gain;
-divider = loop_opts.divider;
+divider = Loop_opts.divider;
 delay = Loop_opts.delay; %s
 
 obj = ammeter_obj;
