@@ -4,6 +4,8 @@ function feloop = hysteresis_PE_DWM(ammeter_obj, Loop_opts, fig)
 amp = Loop_opts.amp;
 period = Loop_opts.period;
 gain = Loop_opts.gain;
+divider = loop_opts.divider;
+delay = Loop_opts.delay; %s
 
 obj = ammeter_obj;
 Flags = obj.show_flags;
@@ -14,7 +16,7 @@ else
     disconnect = false;
 end
 
-obj.set_gain(gain);
+obj.set_gain(gain, divider);
 obj.set_amp_and_period(amp, period);
 % relay_chV(obj, false); %undone
 
@@ -33,7 +35,6 @@ if class(fig) == "matlab.ui.Figure"
     draw_cmd = true;
 end
 
-delay  = 8; %s
 
 obj.set_wave_form_gen(2);
 measure_part(obj, draw_cmd, amp);
@@ -92,10 +93,24 @@ while Flags.sending
         stream_ch2 = [stream_ch2 part_ch_2];
     end
     
+    % y-units
+    switch mode
+        case "res"
+            y_unit = "I, A";
+        case "cap"
+            y_unit = "q, C";
+        case "mix"
+            y_unit = "volts, V";
+        case "off"
+            y_unit = "volts, V";
+    end
+
     if draw_cmd
         cla
         plot(stream_ch1, stream_ch2, '-b', 'linewidth', 0.8);
-        xlim([-amp*1.1 amp*1.1])
+        xlim([-amp*1.1 amp*1.1]);
+        xlabel('voltage, V');
+        ylabel(y_unit);
         drawnow
     end
     

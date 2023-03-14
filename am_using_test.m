@@ -11,7 +11,7 @@ warning off verbose
 
 obj = Ammeter("COM3", [], 'bias');
 % obj = Ammeter("COM3", []);
-obj.set_gain(1);
+obj.set_gain(1, 1);
 
 
 obj.connect();
@@ -81,7 +81,7 @@ clc
 obj = Ammeter("COM3", 'nyan');
 obj.connect();
 relay_chV(obj, false);
-obj.set_gain(20);
+obj.set_gain(20, 20);
 obj.set_amp_and_period(50, 10);
 obj.set_wave_form_gen(1);
 obj.start_measuring();
@@ -157,7 +157,7 @@ clc
 
 obj = Ammeter("COM3", [], 'bias');
 % obj = Ammeter("COM3", []);
-obj.set_gain(1);
+obj.set_gain(1, 1);
 
 
 obj.connect();
@@ -208,7 +208,7 @@ clc
 
 obj = Ammeter("COM3", [], 'bias');
 % obj = Ammeter("COM3", []);
-obj.set_gain(1);
+obj.set_gain(1, 1);
 
 
 obj.connect();
@@ -377,7 +377,7 @@ obj.show_flags()
 
 obj.show_analog()
 
-obj.set_gain(2)
+obj.set_gain(2, 2)
 
 obj.get_name()
 

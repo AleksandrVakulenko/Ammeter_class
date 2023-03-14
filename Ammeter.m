@@ -119,7 +119,8 @@ classdef Ammeter < handle
                 V_ch2 = V_ch2 - obj.Analog.bias.ch2;
                 if CMD.flag
                     if CMD.high == 2 && CMD.low == 0
-                        disp('Measuring stopped')
+                        % NOTE: message disabled
+                        %disp('Measuring stopped')
                         obj.Flags.sending = false;
                     end
                 end
@@ -129,8 +130,8 @@ classdef Ammeter < handle
         function [ch1, ch2, mode, res_cap, isOk] = read_data_units(obj)
             [V_ch1, V_ch2, isOk] = read_data(obj);
             res_cap = struct('res', obj.Analog.res, 'cap', obj.Analog.cap);
-            gain = obj.Analog.gain;
-            ch1 = V_ch1*gain;
+            gain_div = obj.Analog.gain_div;
+            ch1 = V_ch1*gain_div;
             if obj.Analog.res == -1 && obj.Analog.cap == -1
                 mode = "off";
                 ch2 = V_ch2;
@@ -313,14 +314,23 @@ classdef Ammeter < handle
             end
         end
         
-        function set_gain(obj, gain)
-            if gain < 0 || gain > 10000
-                msg = ['Wrong gain settings (ignoreg):' newline ...
-                    'input value: ' num2str(gain) newline ...
+        function set_gain(obj, gain_amp, gain_div)
+            if gain_amp < 0 || gain_amp > 10000
+                msg = ['Wrong gain_amp settings (ignoreg):' newline ...
+                    'input value: ' num2str(gain_amp) newline ...
                     'current value: ' num2str(obj.Analog.gain)];
                 warning(msg)
             else
-                obj.Analog.gain = gain;
+                obj.Analog.gain = gain_amp;
+            end
+
+            if gain_div < 0 || gain_div > 10000
+                msg = ['Wrong gain_div settings (ignoreg):' newline ...
+                    'input value: ' num2str(gain_div) newline ...
+                    'current value: ' num2str(obj.Analog.gain_div)];
+                warning(msg)
+            else
+                obj.Analog.gain_div = gain_div;
             end
         end
         
@@ -350,6 +360,7 @@ classdef Ammeter < handle
                         'Period', 2, ...
                         'Waveform', 0,...
                         'gain', 1, ...
+                        'gain_div', 1, ...
                         'res', -1, ...
                         'cap', -1);
         

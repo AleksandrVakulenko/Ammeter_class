@@ -31,6 +31,14 @@ else
     warning('default gain is set to 1')
 end
 
+ind = find(pred == 'divider');
+if ~isempty(ind)
+    loop_opts.divider = value(ind);
+else
+    loop_opts.divider = 1;
+    warning('default divider is set to 1')
+end
+
 ind = find(pred == 'period');
 if ~isempty(ind)
     loop_opts.period = value(ind);
@@ -46,6 +54,15 @@ else
     loop_opts.amp = 1;
     warning('default amp is set to 1 V')
 end
+
+ind = find(pred == 'delay');
+if ~isempty(ind)
+    loop_opts.delay = value(ind);
+else
+    loop_opts.amp = 0.5; %s
+    warning('default delay is set to 0.5 s')
+end
+
 
 end
 

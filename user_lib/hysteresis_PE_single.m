@@ -4,6 +4,7 @@ function [E, P] = hysteresis_PE_single(ammeter_obj, Loop_opts, fig)
 amp = Loop_opts.amp;
 period = Loop_opts.period;
 gain = Loop_opts.gain;
+divider = loop_opts.divider;
 
 obj = ammeter_obj;
 Flags = obj.show_flags;
@@ -14,7 +15,7 @@ else
     disconnect = false;
 end
 
-obj.set_gain(gain);
+obj.set_gain(gain, divider);
 obj.set_amp_and_period(amp, period);
 % relay_chV(obj, false); %undone
 obj.set_wave_form_gen(0); %undone
