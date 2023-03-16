@@ -6,6 +6,8 @@ period = Loop_opts.period;
 gain = Loop_opts.gain;
 divider = Loop_opts.divider;
 delay = Loop_opts.delay; %s
+init_pulse = Loop_opts.init_pulse;
+voltage_ch = Loop_opts.voltage_ch;
 
 obj = ammeter_obj;
 Flags = obj.show_flags;
@@ -18,9 +20,16 @@ end
 
 obj.set_gain(gain, divider);
 obj.set_amp_and_period(amp, period);
-% relay_chV(obj, false); %undone
 
-
+switch voltage_ch
+    case 1
+        relay_chV(obj, true);
+    case 0
+        relay_chV(obj, false);
+    otherwise
+        obj.disconnect();
+        error('Wrong "voltage_ch" value in Loop_options')
+end
 
 
 if fig == 0 
@@ -35,29 +44,36 @@ if class(fig) == "matlab.ui.Figure"
     draw_cmd = true;
 end
 
+switch init_pulse
+    case 1
+        obj.set_wave_form_gen(2);
+        measure_part(obj, draw_cmd, amp);
+        pause(delay)
+    case 0
+        % nothing to do here
+    otherwise
+        obj.disconnect();
+        error('Wrong "init_pulse" value in Loop_options')
+end
 
-obj.set_wave_form_gen(2);
-measure_part(obj, draw_cmd, amp);
-
-pause(delay)
 obj.set_wave_form_gen(1);
 [E_part, P_part] = measure_part(obj, draw_cmd, amp);
 feloop.init.E.p = E_part;
 feloop.init.P.p = P_part;
-
 pause(delay)
+
 obj.set_wave_form_gen(1);
 [E_part, P_part] = measure_part(obj, draw_cmd, amp);
 feloop.ref.E.p = E_part;
 feloop.ref.P.p = P_part;
-
 pause(delay)
+
 obj.set_wave_form_gen(2);
 [E_part, P_part] = measure_part(obj, draw_cmd, amp);
 feloop.init.E.n = E_part;
 feloop.init.P.n = P_part;
-
 pause(delay)
+
 obj.set_wave_form_gen(2);
 [E_part, P_part] = measure_part(obj, draw_cmd, amp);
 feloop.ref.E.n = E_part;

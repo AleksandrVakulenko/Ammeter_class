@@ -5,6 +5,9 @@ amp = Loop_opts.amp;
 period = Loop_opts.period;
 gain = Loop_opts.gain;
 divider = Loop_opts.divider;
+% delay = Loop_opts.delay; %s
+% init_pulse = Loop_opts.init_pulse;
+voltage_ch = Loop_opts.voltage_ch;
 
 obj = ammeter_obj;
 Flags = obj.show_flags;
@@ -17,8 +20,17 @@ end
 
 obj.set_gain(gain, divider);
 obj.set_amp_and_period(amp, period);
-% relay_chV(obj, false); %undone
 obj.set_wave_form_gen(0); %undone
+
+switch voltage_ch
+    case 1
+        relay_chV(obj, true);
+    case 0
+        relay_chV(obj, false);
+    otherwise
+        obj.disconnect();
+        error('Wrong "voltage_ch" value in Loop_options')
+end
 
 obj.start_measuring();
 
