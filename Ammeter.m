@@ -120,7 +120,7 @@ classdef Ammeter < handle
                 if CMD.flag
                     if CMD.high == 2 && CMD.low == 0
                         % NOTE: message disabled
-                        %disp('Measuring stopped')
+                        % disp('Measuring stopped')
                         obj.Flags.sending = false;
                     end
                 end
@@ -333,10 +333,6 @@ classdef Ammeter < handle
                 obj.Analog.gain_div = gain_div;
             end
         end
-        
-        function name = get_name(obj) %FIXME unused
-            name = obj.name;
-        end
         %--------------------------Getters_END------------------------------
     end
     
@@ -454,7 +450,6 @@ Bytes_01 = Data_all(1:4:end);
 Bytes_02 = Data_all(2:4:end);
 Bytes_03 = Data_all(3:4:end);
 Bytes_04 = Data_all(4:4:end);
-% disp([Bytes_03(1) Bytes_04(1)])%FIXME delete
 
 CMD_ind = find((Bytes_01 == 0x80) & (Bytes_02 == 0x00));
 if CMD_ind
