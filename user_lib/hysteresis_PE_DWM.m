@@ -122,7 +122,7 @@ while Flags.sending
     end
 
     if draw_cmd
-        cla
+%         cla %NOTE: commented to plot all on same fig
         plot(stream_ch1, stream_ch2, '-b', 'linewidth', 0.8);
         xlim([-amp*1.1 amp*1.1]);
         xlabel('voltage, V');
