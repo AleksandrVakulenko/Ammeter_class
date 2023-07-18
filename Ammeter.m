@@ -238,6 +238,16 @@ classdef Ammeter < handle
             end
         end
         
+        function set_post_period(obj, post_period)
+            if obj.Flags.connected
+                [p_byte_high, p_byte_low, post_period] = postperiod2bitcode(post_period); %s
+                obj.send_cmd(uint8([12 p_byte_high p_byte_low 0 0]));
+                obj.Analog.PostPeriod = post_period;
+            else
+                warning(['CMD set_post_period ' num2str(post_period) ' ignored'])
+            end
+        end
+
         function set_amp_and_period(obj, amp, period)
             %FIXME: global V limit check here
             gain = obj.Analog.gain;
@@ -354,6 +364,7 @@ classdef Ammeter < handle
                         'voltage_out', 0, ...
                         'Amplitude', 0, ...
                         'Period', 2, ...
+                        'PostPeriod', 0, ...
                         'Waveform', 0,...
                         'gain', 1, ...
                         'gain_div', 1, ...
@@ -555,7 +566,7 @@ if period < low_limit
 end
 
 Sample_period = 1; % ms
-Tick_count = period*1000/Sample_period;
+Tick_count = uint16(period*1000/Sample_period)
 
 bit_set_low = bitget(Tick_count, 8:-1:1);
 byte_low = uint8(bi2de(flip(bit_set_low)));
@@ -563,6 +574,23 @@ bit_set_high = bitget(Tick_count, 16:-1:9);
 byte_high = uint8(bi2de(flip(bit_set_high)));
 end
 
+function [byte_high, byte_low, period] = postperiod2bitcode(period) %s
+high_limit = 60;
+low_limit = 0;
+if period > high_limit
+    period = high_limit;
+end
+if period < low_limit
+    period = low_limit;
+end
 
+Sample_period = 1; % ms
+Tick_count = uint16(period*1000/Sample_period)
+
+bit_set_low = bitget(Tick_count, 8:-1:1);
+byte_low = uint8(bi2de(flip(bit_set_low)));
+bit_set_high = bitget(Tick_count, 16:-1:9);
+byte_high = uint8(bi2de(flip(bit_set_high)));
+end
 
 

@@ -3,6 +3,7 @@
 function feloop = hysteresis_PE_DWM(ammeter_obj, Loop_opts, fig)
 amp = Loop_opts.amp;
 period = Loop_opts.period;
+post_period = Loop_opts.post_period;
 gain = Loop_opts.gain;
 divider = Loop_opts.divider;
 delay = Loop_opts.delay; %s
@@ -20,6 +21,7 @@ end
 
 obj.set_gain(gain, divider);
 obj.set_amp_and_period(amp, period);
+obj.set_post_period(post_period);
 
 switch voltage_ch
     case 1
@@ -122,7 +124,7 @@ while Flags.sending
     end
 
     if draw_cmd
-        cla
+%         cla
         plot(stream_ch1, stream_ch2, '-b', 'linewidth', 0.8);
         xlim([-amp*1.1 amp*1.1]);
         xlabel('voltage, V');

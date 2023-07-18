@@ -6,6 +6,7 @@ function loop_opts = loop_options(varargin)
 % options:
 %   gain | amplifier gain
 %   period | measuring period (for each part in case of DWM)
+%   post | post period with zero voltage (after main wave gen)
 %   amp |output amplitude
 %   divider | voltage divider coefficient
 %   delay | after measuring part  in DWM
@@ -51,6 +52,14 @@ if ~isempty(ind)
 else
     loop_opts.period = 1; %s
     warning('default period is set to 1 s')
+end
+
+ind = find(pred == 'post');
+if ~isempty(ind)
+    loop_opts.post_period = value(ind);
+else
+    loop_opts.post_period = 0; %s
+    warning('default post period is set to 0 s')
 end
 
 ind = find(pred == 'amp');
