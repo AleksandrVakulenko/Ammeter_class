@@ -7,6 +7,7 @@ post_period = Loop_opts.post_period;
 gain = Loop_opts.gain;
 divider = Loop_opts.divider;
 delay = Loop_opts.delay; %s
+refnum = Loop_opts.refnum;
 init_pulse = Loop_opts.init_pulse;
 voltage_ch = Loop_opts.voltage_ch;
 
@@ -70,6 +71,17 @@ feloop.ref.E.p = E_part;
 feloop.ref.P.p = P_part;
 pause(delay)
 
+if refnum > 1
+    for rn = 1:refnum
+        obj.set_wave_form_gen(1);
+        [E_part, P_part] = measure_part(obj, draw_cmd, amp);
+        feloop.refnext(rn).E.p = E_part;
+        feloop.refnext(rn).P.p = P_part;
+        pause(delay)
+    end
+end
+
+
 obj.set_wave_form_gen(2);
 [E_part, P_part] = measure_part(obj, draw_cmd, amp);
 feloop.init.E.n = E_part;
@@ -80,6 +92,17 @@ obj.set_wave_form_gen(2);
 [E_part, P_part] = measure_part(obj, draw_cmd, amp);
 feloop.ref.E.n = E_part;
 feloop.ref.P.n = P_part;
+pause(delay)
+
+if refnum > 1
+    for rn = 1:refnum
+        obj.set_wave_form_gen(2);
+        [E_part, P_part] = measure_part(obj, draw_cmd, amp);
+        feloop.refnext(rn).E.n = E_part;
+        feloop.refnext(rn).P.n = P_part;
+        pause(delay)
+    end
+end
 
 if disconnect
     obj.disconnect();
