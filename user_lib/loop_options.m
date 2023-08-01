@@ -9,7 +9,8 @@ function loop_opts = loop_options(varargin)
 %   post | post period with zero voltage (after main wave gen)
 %   amp |output amplitude
 %   divider | voltage divider coefficient
-%   delay | after measuring part  in DWM
+%   delay | after measuring part in DWM
+%   refnum | number of ref passes
 %   init_pulse | 1 - on, 0 - off
 %   voltage_ch | 1 - external, 0 - internal
 
@@ -78,6 +79,14 @@ else
     warning('default delay is set to 0.5 s')
 end
 
+ind = find(pred == 'refnum');
+if ~isempty(ind)
+    loop_opts.refnum = value(ind);
+else
+    loop_opts.refnum = 1; %s
+    warning('default refnum is set to 1 s')
+end
+
 ind = find(pred == 'init_pulse');
 if ~isempty(ind)
     loop_opts.init_pulse = value(ind);
@@ -94,6 +103,6 @@ else
     warning('voltage ch connected internaly')
 end
 
-
+loop_opts.name = 'feloop_opts';
 end
 
