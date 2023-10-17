@@ -72,7 +72,7 @@ feloop.ref.P.p = P_part;
 pause(delay)
 
 if refnum > 1
-    for rn = 1:refnum
+    for rn = 1:refnum-1
         obj.set_wave_form_gen(1);
         [E_part, P_part] = measure_part(obj, draw_cmd, amp);
         feloop.refnext(rn).E.p = E_part;
@@ -95,7 +95,7 @@ feloop.ref.P.n = P_part;
 pause(delay)
 
 if refnum > 1
-    for rn = 1:refnum
+    for rn = 1:refnum-1
         obj.set_wave_form_gen(2);
         [E_part, P_part] = measure_part(obj, draw_cmd, amp);
         feloop.refnext(rn).E.n = E_part;

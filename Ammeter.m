@@ -566,7 +566,7 @@ if period < low_limit
 end
 
 Sample_period = 1; % ms
-Tick_count = uint16(period*1000/Sample_period)
+Tick_count = uint16(period*1000/Sample_period);
 
 bit_set_low = bitget(Tick_count, 8:-1:1);
 byte_low = uint8(bi2de(flip(bit_set_low)));
@@ -585,7 +585,7 @@ if period < low_limit
 end
 
 Sample_period = 1; % ms
-Tick_count = uint16(period*1000/Sample_period)
+Tick_count = uint16(period*1000/Sample_period);
 
 bit_set_low = bitget(Tick_count, 8:-1:1);
 byte_low = uint8(bi2de(flip(bit_set_low)));
