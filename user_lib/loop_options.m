@@ -83,8 +83,8 @@ ind = find(pred == 'refnum');
 if ~isempty(ind)
     loop_opts.refnum = value(ind);
 else
-    loop_opts.refnum = 1; %s
-    warning('default refnum is set to 1 s')
+    loop_opts.refnum = 1;
+    warning('default refnum is set to 1')
 end
 
 ind = find(pred == 'init_pulse');
