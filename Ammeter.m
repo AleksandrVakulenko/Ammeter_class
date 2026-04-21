@@ -466,10 +466,6 @@ Flags = obj.show_flags;
 
 if ~Flags.connected
     obj.connect('reset');
-else
-    obj.disconnect();
-    pause(0.01);
-    obj.connect('reset');
 end
 
 obj.voltage_set(0);
@@ -487,7 +483,6 @@ while toc(timer) < Measuring_period
     stream_ch2 = [stream_ch2 part_ch_2];
 end
 obj.sending(false);
-obj.disconnect();
 
 ch1_mean = mean(stream_ch1);
 ch2_mean = mean(stream_ch2);
